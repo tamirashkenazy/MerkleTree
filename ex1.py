@@ -9,8 +9,14 @@ class Node(object):
         self.value = value
         self.right = right
         self.left = left
+
     def get_value(self):
         return self.value
+    def get_left_child(self):
+        return self.left
+
+    def get_right_child(self):
+        return self.right
 
     def __str__(self):
         return self.value
@@ -18,8 +24,41 @@ class Node(object):
         return self.value
 
 class MerkleTree(object):
-    def __init__(self, root):
+    def __init__(self, root, leaves):
         self.root = root
+        self.leaves = leaves
+
+    def get_leaf_by_index(self, index):
+        if index < len(self.leaves):
+            return self.leaves[index]
+        return None
+
+    def create_proof_of_inclusion(self, str_index_in_list):
+        index = int(str_index_in_list[0])
+        if not index < len(self.leaves):
+            return None
+        list_of_proofs = []
+        interval = list(range(len(self.leaves)))
+        temp_root = self.root
+        while len(interval) != 1:
+            if index in interval[:len(interval)//2]: #left side
+                right_child = temp_root.get_right_child()
+                temp_root = temp_root.get_left_child()
+                if not right_child:
+                    break
+                list_of_proofs.append(right_child.get_value())
+                list_of_proofs.append("r")
+                interval = interval[:len(interval)//2]
+            else:
+                left_child = temp_root.get_left_child()
+                temp_root = temp_root.get_right_child()
+                if not left_child:
+                    break
+                list_of_proofs.append(left_child.get_value())
+                list_of_proofs.append("l")
+                interval = interval[len(interval) // 2:]
+        list_of_proofs.reverse()
+        return list_of_proofs
 
 
 
@@ -33,13 +72,13 @@ def build_merkle_tree(str_list):
         left, right = nodes.pop(0), nodes.pop(0)
         temp_string_value = left.get_value() + right.get_value()
         hashed_value = sha256(temp_string_value.encode(UTF_8_ENCODE)).hexdigest()
-        father = Node(hashed_value, left, right)
+        father = Node(hashed_value, right, left)
         nodes.append(father)
-    return MerkleTree(nodes[0])
+    return MerkleTree(nodes[0], str_list)
 
 
-def create_proof_of_inclusion(index_of_leaves):
-    pass
+# def create_proof_of_inclusion(index_of_leaf):
+#     pass
 
 def check_proof_of_inclusion(leaf_to_check, merkle_tree_root, proof_of_inclusion_list):
     pass
@@ -49,7 +88,7 @@ def go_out():
 
 HANDLE_FUNCS_MAP = {
     "1" : build_merkle_tree,
-    "2" : create_proof_of_inclusion,
+    # "2" : create_proof_of_inclusion,
     "3" : check_proof_of_inclusion,
     "4" : None
 }
@@ -59,13 +98,20 @@ class ArgumentsHandler(object):
         self.args = args
         self.operation = self.set_operation()
         self.is_merkle_tree = is_merkle_tree
+        self.merkle_tree = None
 
+    def set_args(self, args):
+        self.args = args
+        self.operation = self.set_operation()
 
     def set_operation(self):
-        if len(args) >= 1:
-            return args[0]
+        if len(self.args) >= 1:
+            return self.args[0]
         else:
             return None
+
+    def get_operation(self):
+        return self.operation
 
     def get_handler(self):
         if self.operation in HANDLE_FUNCS_MAP:
@@ -82,6 +128,11 @@ class ArgumentsHandler(object):
            return self.args[1:]
         else:
             return []
+    def set_merkle_tree(self, merkle_tree):
+        self.merkle_tree = merkle_tree
+
+    def get_merkle_tree(self):
+        return self.merkle_tree
 
     def __repr__(self):
         return self.args
@@ -101,17 +152,22 @@ if __name__ == "__main__":
                 cprint(merkle_tree.root, "blue")
                 if merkle_tree:
                     args_handler.is_merkle_tree = True
+                    args_handler.set_merkle_tree(merkle_tree)
+            elif operation == "2":
+                merkle_tree = args_handler.get_merkle_tree()
+                proof = merkle_tree.create_proof_of_inclusion(args_handler.get_args_for_function())
+                cprint(proof, "green")
 
             else:
                 handler_function = args_handler.get_handler() #None or function from dict
                 if handler_function:
-                    return_value = handler_function()
+                    return_value = handler_function(args_handler.get_args_for_function())
                     # TODO - something with the return value
 
             args = input()
             args = args.split()
-            args_handler = ArgumentsHandler(args)
-            operation = args_handler.set_operation()
+            args_handler.set_args(args)
+            operation = args_handler.get_operation()
 
     except Exception as e:
         print(e)
