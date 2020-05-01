@@ -1,8 +1,6 @@
 # tamir ashkenazy, 204508949, lidor alis, 201025160
 from hashlib import sha256
 UTF_8_ENCODE = "utf-8"
-from termcolor import colored, cprint
-
 
 class Node(object):
     def __init__(self, value, right=None, left=None):
@@ -37,14 +35,14 @@ class MerkleTree(object):
             interval = list(range(len(self.leaves)))
             temp_root = self.root
             while len(interval) != 1:
-                if index in interval[:len(interval)//2]: #left side
+                if index in interval[:len(interval) // 2]: #left side
                     right_child = temp_root.get_right_child()
                     temp_root = temp_root.get_left_child()
                     if not right_child:
                         break
                     list_of_proofs.append(right_child.get_value())
                     list_of_proofs.append("r")
-                    interval = interval[:len(interval)//2]
+                    interval = interval[:len(interval) // 2]
                 else:
                     left_child = temp_root.get_left_child()
                     temp_root = temp_root.get_right_child()
@@ -60,31 +58,36 @@ class MerkleTree(object):
             exit(0)
 
     def hash_nonce(self, difficult_level_in_list):
-        difficult_level = int(difficult_level_in_list[0])
-        str_of_zeros = "0"*difficult_level
-        num_to_hash_with_root = 0
-        root_val = self.root.get_value()
-        while True:
-            s = str(num_to_hash_with_root)+root_val
-            hashed_value = sha256(s.encode(UTF_8_ENCODE)).hexdigest()
-            if hashed_value.startswith(str_of_zeros):
-                return num_to_hash_with_root
-            num_to_hash_with_root += 1
-
+        try:
+            difficult_level = int(difficult_level_in_list[0])
+            str_of_zeros = "0"*difficult_level
+            num_to_hash_with_root = 0
+            root_val = self.root.get_value()
+            while True:
+                s = str(num_to_hash_with_root) + root_val
+                hashed_value = sha256(s.encode(UTF_8_ENCODE)).hexdigest()
+                if hashed_value.startswith(str_of_zeros):
+                    return num_to_hash_with_root, hashed_value
+                num_to_hash_with_root += 1
+        except:
+            exit(0)
 
 
 def build_merkle_tree(str_list):
-    if not str_list:
-        return None
+    try:
+        if not str_list:
+            return None
 
-    nodes = [Node(leaf) for leaf in str_list]
-    while len(nodes) != 1:
-        left, right = nodes.pop(0), nodes.pop(0)
-        temp_string_value = left.get_value() + right.get_value()
-        hashed_value = sha256(temp_string_value.encode(UTF_8_ENCODE)).hexdigest()
-        father = Node(hashed_value, right, left)
-        nodes.append(father)
-    return MerkleTree(nodes[0], str_list)
+        nodes = [Node(leaf) for leaf in str_list]
+        while len(nodes) != 1:
+            left, right = nodes.pop(0), nodes.pop(0)
+            temp_string_value = left.get_value() + right.get_value()
+            hashed_value = sha256(temp_string_value.encode(UTF_8_ENCODE)).hexdigest()
+            father = Node(hashed_value, right, left)
+            nodes.append(father)
+        return MerkleTree(nodes[0], str_list)
+    except:
+        exit(0)
 
 
 # def create_proof_of_inclusion(index_of_leaf):
@@ -123,9 +126,7 @@ def go_out():
 
 HANDLE_FUNCS_MAP = {
     "1" : build_merkle_tree,
-    # "2" : create_proof_of_inclusion,
     "3" : check_proof_of_inclusion,
-    "4" : None
 }
 
 class ArgumentsHandler(object):
@@ -171,7 +172,9 @@ class ArgumentsHandler(object):
     def __repr__(self):
         return self.args
 
+
 EXIT_OPERATION = "5"
+
 
 if __name__ == "__main__":
     try:
@@ -180,10 +183,10 @@ if __name__ == "__main__":
         args_handler = ArgumentsHandler(args)
         operation = args_handler.operation
 
-        while operation != EXIT_OPERATION: # !=5
+        while operation != EXIT_OPERATION:
             if operation == "1":
                 merkle_tree = build_merkle_tree(args_handler.get_args_for_function())
-                cprint(merkle_tree.root, "blue")
+                print(merkle_tree)
                 if merkle_tree:
                     args_handler.is_merkle_tree = True
                     args_handler.set_merkle_tree(merkle_tree)
@@ -191,18 +194,18 @@ if __name__ == "__main__":
             elif operation == "2":
                 merkle_tree = args_handler.get_merkle_tree()
                 proof = merkle_tree.create_proof_of_inclusion(args_handler.get_args_for_function())
-                cprint(proof, "green")
+                print(proof)
 
             elif operation == "4":
                 merkle_tree = args_handler.get_merkle_tree()
-                nonce_value = merkle_tree.hash_nonce(args_handler.get_args_for_function())
+                nonce_value, hashed_value = merkle_tree.hash_nonce(args_handler.get_args_for_function())
+                print("{} {}".format(nonce_value, hashed_value))
 
             else:
                 handler_function = args_handler.get_handler() #None or function from dict
                 if handler_function:
                     return_value = handler_function(args_handler.get_args_for_function())
                     print(return_value)
-                    # TODO - something with the return value
 
             args = input()
             args = args.split()
