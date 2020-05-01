@@ -80,8 +80,28 @@ def build_merkle_tree(str_list):
 # def create_proof_of_inclusion(index_of_leaf):
 #     pass
 
-def check_proof_of_inclusion(leaf_to_check, merkle_tree_root, proof_of_inclusion_list):
-    pass
+def check_proof_of_inclusion(args):
+    if len(args) <2:
+        return False
+    leaf_to_check = args[0]
+    merkle_tree_root = args[1]
+    # only one leaf
+    if len(args) <3:
+        return leaf_to_check == merkle_tree_root
+    proof_of_inclusion_list = args[2:]
+    while len(proof_of_inclusion_list) !=0:
+        direction = proof_of_inclusion_list.pop(0)
+        other = proof_of_inclusion_list.pop(0)
+        if direction == "l":
+            leaf_to_check = other + leaf_to_check
+        elif direction == "r":
+            leaf_to_check = leaf_to_check + other
+        else:
+            return False
+        leaf_to_check = sha256(leaf_to_check.encode(UTF_8_ENCODE)).hexdigest()
+    print (leaf_to_check == merkle_tree_root)
+    return leaf_to_check == merkle_tree_root
+
 
 def go_out():
     return
