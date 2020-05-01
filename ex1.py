@@ -28,37 +28,36 @@ class MerkleTree(object):
         self.root = root
         self.leaves = leaves
 
-    def get_leaf_by_index(self, index):
-        if index < len(self.leaves):
-            return self.leaves[index]
-        return None
-
     def create_proof_of_inclusion(self, str_index_in_list):
-        index = int(str_index_in_list[0])
-        if not index < len(self.leaves):
-            return None
-        list_of_proofs = []
-        interval = list(range(len(self.leaves)))
-        temp_root = self.root
-        while len(interval) != 1:
-            if index in interval[:len(interval)//2]: #left side
-                right_child = temp_root.get_right_child()
-                temp_root = temp_root.get_left_child()
-                if not right_child:
-                    break
-                list_of_proofs.append(right_child.get_value())
-                list_of_proofs.append("r")
-                interval = interval[:len(interval)//2]
-            else:
-                left_child = temp_root.get_left_child()
-                temp_root = temp_root.get_right_child()
-                if not left_child:
-                    break
-                list_of_proofs.append(left_child.get_value())
-                list_of_proofs.append("l")
-                interval = interval[len(interval) // 2:]
-        list_of_proofs.reverse()
-        return list_of_proofs
+        try:
+            index = int(str_index_in_list[0])
+            if not index < len(self.leaves):
+                exit(0)
+            list_of_proofs = []
+            interval = list(range(len(self.leaves)))
+            temp_root = self.root
+            while len(interval) != 1:
+                if index in interval[:len(interval)//2]: #left side
+                    right_child = temp_root.get_right_child()
+                    temp_root = temp_root.get_left_child()
+                    if not right_child:
+                        break
+                    list_of_proofs.append(right_child.get_value())
+                    list_of_proofs.append("r")
+                    interval = interval[:len(interval)//2]
+                else:
+                    left_child = temp_root.get_left_child()
+                    temp_root = temp_root.get_right_child()
+                    if not left_child:
+                        break
+                    list_of_proofs.append(left_child.get_value())
+                    list_of_proofs.append("l")
+                    interval = interval[len(interval) // 2:]
+            list_of_proofs.reverse()
+            str_proof = (" ").join(list_of_proofs)
+            return str_proof
+        except:
+            exit(0)
 
 
 
@@ -81,26 +80,31 @@ def build_merkle_tree(str_list):
 #     pass
 
 def check_proof_of_inclusion(args):
-    if len(args) <2:
-        return False
-    leaf_to_check = args[0]
-    merkle_tree_root = args[1]
-    # only one leaf
-    if len(args) <3:
+    try:
+        # 2 means there are no leaf and root
+        if len(args) < 2:
+            exit(0)
+        leaf_to_check = args[0]
+        merkle_tree_root = args[1]
+        # case of only one leaf
+        if len(args) < 3:
+            return leaf_to_check == merkle_tree_root
+        proof_of_inclusion_list = args[2:]
+        if len(proof_of_inclusion_list) % 2 == 1:
+            exit(0)
+        while len(proof_of_inclusion_list) != 0:
+            direction = proof_of_inclusion_list.pop(0)
+            other = proof_of_inclusion_list.pop(0)
+            if direction == "l":
+                leaf_to_check = other + leaf_to_check
+            elif direction == "r":
+                leaf_to_check = leaf_to_check + other
+            else:
+                exit(0)
+            leaf_to_check = sha256(leaf_to_check.encode(UTF_8_ENCODE)).hexdigest()
         return leaf_to_check == merkle_tree_root
-    proof_of_inclusion_list = args[2:]
-    while len(proof_of_inclusion_list) !=0:
-        direction = proof_of_inclusion_list.pop(0)
-        other = proof_of_inclusion_list.pop(0)
-        if direction == "l":
-            leaf_to_check = other + leaf_to_check
-        elif direction == "r":
-            leaf_to_check = leaf_to_check + other
-        else:
-            return False
-        leaf_to_check = sha256(leaf_to_check.encode(UTF_8_ENCODE)).hexdigest()
-    print (leaf_to_check == merkle_tree_root)
-    return leaf_to_check == merkle_tree_root
+    except:
+        exit(0)
 
 
 def go_out():
@@ -138,7 +142,6 @@ class ArgumentsHandler(object):
             #
             if self.operation == 2 and not self.is_merkle_tree:
                 return None
-
             return HANDLE_FUNCS_MAP[self.operation]
         else:
             return None
@@ -173,6 +176,7 @@ if __name__ == "__main__":
                 if merkle_tree:
                     args_handler.is_merkle_tree = True
                     args_handler.set_merkle_tree(merkle_tree)
+
             elif operation == "2":
                 merkle_tree = args_handler.get_merkle_tree()
                 proof = merkle_tree.create_proof_of_inclusion(args_handler.get_args_for_function())
@@ -182,6 +186,7 @@ if __name__ == "__main__":
                 handler_function = args_handler.get_handler() #None or function from dict
                 if handler_function:
                     return_value = handler_function(args_handler.get_args_for_function())
+                    print(return_value)
                     # TODO - something with the return value
 
             args = input()
@@ -189,5 +194,5 @@ if __name__ == "__main__":
             args_handler.set_args(args)
             operation = args_handler.get_operation()
 
-    except Exception as e:
-        print(e)
+    except:
+        exit(0)
