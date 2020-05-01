@@ -61,6 +61,19 @@ class MerkleTree(object):
         return list_of_proofs
 
 
+    def hash_nonce(self, difficult_level_in_list):
+        difficult_level = int(difficult_level_in_list[0])
+        str_of_zeros = "0"*difficult_level
+        num_to_hash_with_root = 0
+        root_val = self.root.get_value()
+        while True:
+            s = str(num_to_hash_with_root)+root_val
+            hashed_value = sha256(s.encode(UTF_8_ENCODE)).hexdigest()
+            if hashed_value.startswith(str_of_zeros):
+                return num_to_hash_with_root
+            num_to_hash_with_root += 1
+
+
 
 
 def build_merkle_tree(str_list):
@@ -101,6 +114,7 @@ def check_proof_of_inclusion(args):
         leaf_to_check = sha256(leaf_to_check.encode(UTF_8_ENCODE)).hexdigest()
     print (leaf_to_check == merkle_tree_root)
     return leaf_to_check == merkle_tree_root
+
 
 
 def go_out():
@@ -177,7 +191,9 @@ if __name__ == "__main__":
                 merkle_tree = args_handler.get_merkle_tree()
                 proof = merkle_tree.create_proof_of_inclusion(args_handler.get_args_for_function())
                 cprint(proof, "green")
-
+            elif operation == "4":
+                merkle_tree = args_handler.get_merkle_tree()
+                nonce_value = merkle_tree.hash_nonce(args_handler.get_args_for_function())
             else:
                 handler_function = args_handler.get_handler() #None or function from dict
                 if handler_function:
