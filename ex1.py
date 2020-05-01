@@ -72,7 +72,10 @@ class MerkleTree(object):
         except:
             exit(0)
 
-
+    def __repr__(self):
+        return self.root.get_value()
+    def __str__(self):
+        return self.root.get_value()
 def build_merkle_tree(str_list):
     try:
         if not str_list:
@@ -186,7 +189,7 @@ if __name__ == "__main__":
         while operation != EXIT_OPERATION:
             if operation == "1":
                 merkle_tree = build_merkle_tree(args_handler.get_args_for_function())
-                print(merkle_tree)
+                print(merkle_tree.root.get_value())
                 if merkle_tree:
                     args_handler.is_merkle_tree = True
                     args_handler.set_merkle_tree(merkle_tree)
